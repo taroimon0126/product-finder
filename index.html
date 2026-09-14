@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>製品検索</title>
+
+  <style>
+    :root {
+      --background: #f5f7fa;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #dbe2ea;
+      --primary: #0067b8;
+      --primary-light: #e8f3fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        "Yu Gothic",
+        sans-serif;
+      color: var(--text);
+      background: var(--background);
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 64px;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .page-header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .search-panel {
+      padding: 20px;
+      margin-bottom: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 13px 14px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .search-box:focus {
+      outline: 3px solid var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .filter-group h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .checkbox-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+    }
+
+    .checkbox-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+    }
+
+    .panel-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .result-count {
+      font-weight: 700;
+    }
+
+    .clear-button {
+      padding: 9px 14px;
+      cursor: pointer;
+      color: var(--primary);
+      background: #ffffff;
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+    }
+
+    .clear-button:hover {
+      background: var(--primary-light);
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .product-card {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .product-body {
+      padding: 18px;
+    }
+
+    .product-body h2 {
+      margin: 0 0 6px;
+      font-size: 19px;
+    }
+
+    .model-number {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .description {
+      margin: 0 0 14px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .tag {
+      padding: 5px 9px;
+      color: #17466d;
+      background: var(--primary-light);
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .product-link {
+      display: inline-block;
+      margin-top: 16px;
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .product-link:hover {
+      text-decoration: underline;
+    }
+
+    .empty-message {
+      grid-column: 1 / -1;
+      padding: 36px 20px;
+      color: var(--muted);
+      text-align: center;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 650px) {
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-header h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header class="page-header">
+      <h1>製品検索</h1>
+      <p>キーワードや製品カテゴリから対象製品を検索できます。</p>
+    </header>
+
+    <section class="search-panel" aria-label="製品検索条件">
+      <label for="keyword">
+        <strong>フリーワード検索</strong>
+      </label>
+
+      <input
+        id="keyword"
+        class="search-box"
+        type="search"
+        placeholder="製品名、型番、特長などを入力"
+      >
+
+      <div class="filters">
+        <section class="filter-group">
+          <h2>製品カテゴリ</h2>
+          <div id="categoryFilters" class="checkbox-list"></div>
+        </section>
+
+        <section class="filter-group">
+          <h2>対象</h2>
+          <div id="audienceFilters" class="checkbox-list"></div>
+        </section>
+      </div>
+
+      <div class="panel-footer">
+        <div
+          id="resultCount"
+          class="result-count"
+          aria-live="polite"
+        ></div>
+
+        <button id="clearButton" class="clear-button" type="button">
+          検索条件をクリア
+        </button>
+      </div>
+    </section>
+
+    <section
+      id="productList"
+      class="product-grid"
+      aria-label="製品検索結果"
+    ></section>
+  </main>
+
+  <script>
+    /*
+     * 製品データ
+     *
+     * categories:
+     *   1製品に複数カテゴリを設定できます。
+     *
+     * audience:
+     *   個人向け、法人向けなどを設定します。
+     *
+     * url:
+     *   公開製品ページのURLに変更してください。
+     */
+    const products = [
+      {
+        name: "Wi-Fiルーター A",
+        model: "WN-EXAMPLE-01",
+        description:
+          "家庭向けの無線LANルーターです。スマートフォンやパソコンをWi-Fiで接続できます。",
+        categories: ["Wi-Fiルーター"],
+        audience: ["個人向け"],
+        keywords: ["無線LAN", "インターネット", "家庭", "スマホ"],
+        url: "https://example.com/products/router-a"
+      },
+      {
+        name: "法人向けNAS B",
+        model: "HDL-EXAMPLE-02",
+        description:
+          "社内データの共有やバックアップに利用できる法人向けネットワークストレージです。",
+        categories: ["NAS", "ストレージ"],
+        audience: ["法人向け"],
+        keywords: ["共有", "バックアップ", "ネットワーク", "Linux"],
+        url: "https://example.com/products/nas-b"
+      },
+      {
+        name: "ポータブルSSD C",
+        model: "SSPX-EXAMPLE-03",
+        description:
+          "持ち運びしやすいコンパクトな外付けSSDです。",
+        categories: ["ストレージ"],
+        audience: ["個人向け", "法人向け"],
+        keywords: ["SSD", "USB", "外付け", "高速"],
+        url: "https://example.com/products/ssd-c"
+      },
+      {
+        name: "液晶ディスプレイ D",
+        model: "LCD-EXAMPLE-04",
+        description:
+          "パソコンや映像機器を接続できる液晶ディスプレイです。",
+        categories: ["液晶ディスプレイ"],
+        audience: ["個人向け", "法人向け"],
+        keywords: ["モニター", "ディスプレイ", "HDMI"],
+        url: "https://example.com/products/lcd-d"
+      },
+      {
+        name: "CD取り込みドライブ E",
+        model: "CD-EXAMPLE-05",
+        description:
+          "スマートフォンへ音楽CDを取り込めるドライブです。",
+        categories: ["CDレコ・DVDミレル", "光学ドライブ"],
+        audience: ["個人向け"],
+        keywords: ["CD", "音楽", "スマートフォン", "取り込み"],
+        url: "https://example.com/products/cd-e"
+      }
+    ];
+
+    const keywordInput =
+      document.getElementById("keyword");
+
+    const categoryFilters =
+      document.getElementById("categoryFilters");
+
+    const audienceFilters =
+      document.getElementById("audienceFilters");
+
+    const productList =
+      document.getElementById("productList");
+
+    const resultCount =
+      document.getElementById("resultCount");
+
+    const clearButton =
+      document.getElementById("clearButton");
+
+    /*
+     * 配列内から重複しない値を作ります。
+     * 製品データを増やすとチェックボックスも自動追加されます。
+     */
+    const categories = [
+      ...new Set(products.flatMap(product => product.categories))
+    ].sort((a, b) => a.localeCompare(b, "ja"));
+
+    const audiences = [
+      ...new Set(products.flatMap(product => product.audience))
+    ].sort((a, b) => a.localeCompare(b, "ja"));
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function createCheckboxes(values, container, groupName) {
+      container.innerHTML = values.map((value, index) => {
+        const id = `${groupName}-${index}`;
+
+        return `
+          <label class="checkbox-item" for="${id}">
+            <input
+              id="${id}"
+              type="checkbox"
+              name="${groupName}"
+              value="${escapeHtml(value)}"
+            >
+            <span>${escapeHtml(value)}</span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    function getCheckedValues(groupName) {
+      return [
+        ...document.querySelectorAll(
+          `input[name="${groupName}"]:checked`
+        )
+      ].map(input => input.value);
+    }
+
+    function normalize(value) {
+      return String(value)
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/\s+/g, "");
+    }
+
+    function matchesKeyword(product, keyword) {
+      if (!keyword) {
+        return true;
+      }
+
+      const searchableText = [
+        product.name,
+        product.model,
+        product.description,
+        ...product.categories,
+        ...product.audience,
+        ...product.keywords
+      ].join(" ");
+
+      return normalize(searchableText).includes(normalize(keyword));
+    }
+
+    /*
+     * チェックされたカテゴリをすべて含む製品だけ表示します。
+     * つまり複数チェックはAND条件です。
+     */
+    function matchesAll(selectedValues, productValues) {
+      if (selectedValues.length === 0) {
+        return true;
+      }
+
+      return selectedValues.every(value =>
+        productValues.includes(value)
+      );
+    }
+
+    function renderProducts() {
+      const keyword = keywordInput.value.trim();
+      const selectedCategories =
+        getCheckedValues("category");
+      const selectedAudiences =
+        getCheckedValues("audience");
+
+      const filteredProducts = products.filter(product => {
+        return (
+          matchesKeyword(product, keyword) &&
+          matchesAll(selectedCategories, product.categories) &&
+          matchesAll(selectedAudiences, product.audience)
+        );
+      });
+
+      resultCount.textContent =
+        `${filteredProducts.length}件の製品が見つかりました`;
+
+      if (filteredProducts.length === 0) {
+        productList.innerHTML = `
+          <div class="empty-message">
+            条件に一致する製品がありません。
+            キーワードやチェック条件を変更してください。
+          </div>
+        `;
+        return;
+      }
+
+      productList.innerHTML = filteredProducts.map(product => {
+        const tags = [
+          ...product.categories,
+          ...product.audience
+        ];
+
+        return `
+          <article class="product-card">
+            <div class="product-body">
+              <h2>${escapeHtml(product.name)}</h2>
+
+              <p class="model-number">
+                型番：${escapeHtml(product.model)}
+              </p>
+
+              <p class="description">
+                ${escapeHtml(product.description)}
+              </p>
+
+              <div class="tags">
+                ${tags.map(tag => `
+                  <span class="tag">${escapeHtml(tag)}</span>
+                `).join("")}
+              </div>
+
+              <a
+                class="product-link"
+                href="${escapeHtml(product.url)}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                製品情報を見る
+              </a>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function clearConditions() {
+      keywordInput.value = "";
+
+      document
+        .querySelectorAll('input[type="checkbox"]')
+        .forEach(input => {
+          input.checked = false;
+        });
+
+      renderProducts();
+      keywordInput.focus();
+    }
+
+    createCheckboxes(
+      categories,
+      categoryFilters,
+      "category"
+    );
+
+    createCheckboxes(
+      audiences,
+      audienceFilters,
+      "audience"
+    );
+
+    keywordInput.addEventListener("input", renderProducts);
+
+    categoryFilters.addEventListener(
+      "change",
+      renderProducts
+    );
+
+    audienceFilters.addEventListener(
+      "change",
+      renderProducts
+    );
+
+    clearButton.addEventListener(
+      "click",
+      clearConditions
+    );
+
+    renderProducts();
+  </script>
+</body>
+</html>
