@@ -492,16 +492,15 @@
         ];
 
                   return `
-            <article class="product-card">
-              ${product.image ? `
-                "
-                  alt="${escapeHtml(product.imageAlt || product.name)}"
-                  loading="lazy"
-                >
-              ` : ""}
-          
-              <div class="product-body">
-                        <h2>${escapeHtml(product.name)}</h2>
+  <article class="product-card">
+    ${product.image ? `
+      ${escapeHtml(product.image)}"
+        loading="lazy"
+      >
+    ` : ""}
+
+    <div class="product-body">
+      <h2>${escapeHtml(product.name)}</h2>
           
                         <p class="model-number">
                 型番：${escapeHtml(product.model)}
